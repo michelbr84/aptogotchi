@@ -1,0 +1,8 @@
+{
+  "appId": "com.aptogotchi.app",
+  "appName": "Aptogotchi",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https"
+  }
+}

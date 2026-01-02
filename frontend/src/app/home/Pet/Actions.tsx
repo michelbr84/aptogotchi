@@ -22,7 +22,7 @@ export interface ActionsProps {
 }
 
 export function Actions({ selectedAction, setSelectedAction }: ActionsProps) {
-  const { pet, setPet } = usePet();
+  const { pet, setPet, demoMode } = usePet();
 
   const [transactionInProgress, setTransactionInProgress] =
     useState<boolean>(false);
@@ -40,6 +40,28 @@ export function Actions({ selectedAction, setSelectedAction }: ActionsProps) {
   };
 
   const handleFeed = async () => {
+    // Demo mode: simulate feeding locally
+    if (demoMode) {
+      setPet((pet) => {
+        if (!pet) return pet;
+        if (
+          pet.energy_points + Number(NEXT_PUBLIC_ENERGY_INCREASE) >
+          Number(NEXT_PUBLIC_ENERGY_CAP)
+        ) {
+          toast.error(`${pet.name} is already full! Try playing instead.`);
+          return pet;
+        }
+
+        toast.success(`Yum! ${pet.name} enjoyed the meal! 🍖`);
+        return {
+          ...pet,
+          energy_points:
+            pet.energy_points + Number(NEXT_PUBLIC_ENERGY_INCREASE),
+        };
+      });
+      return;
+    }
+
     if (!account || !network) return;
 
     setTransactionInProgress(true);
@@ -79,6 +101,25 @@ export function Actions({ selectedAction, setSelectedAction }: ActionsProps) {
   };
 
   const handlePlay = async () => {
+    // Demo mode: simulate playing locally
+    if (demoMode) {
+      setPet((pet) => {
+        if (!pet) return pet;
+        if (pet.energy_points <= Number(NEXT_PUBLIC_ENERGY_DECREASE)) {
+          toast.error(`${pet.name} is too tired to play! Feed them first.`);
+          return pet;
+        }
+
+        toast.success(`Wheee! ${pet.name} had so much fun! 🎉`);
+        return {
+          ...pet,
+          energy_points:
+            pet.energy_points - Number(NEXT_PUBLIC_ENERGY_DECREASE),
+        };
+      });
+      return;
+    }
+
     if (!account || !network) return;
 
     setTransactionInProgress(true);
@@ -122,6 +163,12 @@ export function Actions({ selectedAction, setSelectedAction }: ActionsProps) {
   const playDisabled =
     selectedAction === "play" && pet?.energy_points === Number(0);
 
+  const buttonText = transactionInProgress
+    ? "Processing..."
+    : selectedAction === "feed"
+      ? "🍖 Feed"
+      : "🎮 Play";
+
   return (
     <div className="nes-container with-title flex-1 bg-white h-[320px]">
       <p className="title">Actions</p>
@@ -152,13 +199,12 @@ export function Actions({ selectedAction, setSelectedAction }: ActionsProps) {
           <p>{actionDescriptions[selectedAction]}</p>
           <button
             type="button"
-            className={`nes-btn is-success ${
-              feedDisabled || playDisabled ? "is-disabled" : ""
-            }`}
+            className={`nes-btn is-success ${feedDisabled || playDisabled ? "is-disabled" : ""
+              }`}
             onClick={handleStart}
             disabled={transactionInProgress || feedDisabled || playDisabled}
           >
-            {transactionInProgress ? "Processing..." : "Start"}
+            {buttonText}
           </button>
         </div>
       </div>

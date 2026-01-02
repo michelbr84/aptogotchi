@@ -3,7 +3,7 @@
 import { AiFillSave } from "react-icons/ai";
 import { FaCopy, FaExternalLinkAlt } from "react-icons/fa";
 import { HealthBar } from "@/components/HealthBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { getAptosClient } from "@/utils/aptosClient";
 import { ABI } from "@/utils/abi";
@@ -13,17 +13,38 @@ import { usePet } from "@/context/PetContext";
 const aptosClient = getAptosClient();
 
 export function PetDetails() {
-  const { pet, setPet } = usePet();
+  const { pet, setPet, demoMode } = usePet();
 
   const [newName, setNewName] = useState<string>(pet?.name || "");
   const { account, network, signAndSubmitTransaction } = useWallet();
-  const owner = account?.ansName
-    ? `${account?.ansName}.apt`
-    : account?.address || "";
 
-  const canSave = newName !== pet?.name;
+  // In demo mode, show "Demo Mode" as owner
+  const owner = demoMode
+    ? "Demo Mode (No Wallet)"
+    : account?.ansName
+      ? `${account?.ansName}.apt`
+      : account?.address || "";
+
+  // Sync newName with pet name when pet changes
+  useEffect(() => {
+    if (pet?.name) {
+      setNewName(pet.name);
+    }
+  }, [pet?.name]);
+
+  const canSave = newName !== pet?.name && newName.trim() !== "";
 
   const handleNameChange = async () => {
+    // Demo mode: update name locally
+    if (demoMode) {
+      setPet((pet) => {
+        if (!pet) return pet;
+        return { ...pet, name: newName };
+      });
+      toast.success(`Name updated to ${newName}!`);
+      return;
+    }
+
     if (!account || !network) return;
 
     try {
@@ -80,16 +101,22 @@ export function PetDetails() {
 
   const ownerFieldComponent = (
     <div className="nes-field">
-      <a
-        className="flex items-center gap-2"
-        href={`https://explorer.aptoslabs.com/account/${owner}?network=testnet`}
-        target="_blank"
-      >
+      {demoMode ? (
         <label htmlFor="owner_field" className="mb-0">
           Owner
         </label>
-        <FaExternalLinkAlt className="h-4 w-4 drop-shadow-sm" />
-      </a>
+      ) : (
+        <a
+          className="flex items-center gap-2"
+          href={`https://explorer.aptoslabs.com/account/${owner}?network=testnet`}
+          target="_blank"
+        >
+          <label htmlFor="owner_field" className="mb-0">
+            Owner
+          </label>
+          <FaExternalLinkAlt className="h-4 w-4 drop-shadow-sm" />
+        </a>
+      )}
       <div className="relative">
         <input
           type="text"
@@ -98,12 +125,14 @@ export function PetDetails() {
           disabled
           value={owner}
         />
-        <button
-          className="absolute right-4 top-1/2 -translate-y-1/2 nes-pointer disabled:cursor-not-allowed text-gray-400 disabled:text-gray-400"
-          onClick={handleCopyOwnerAddrOrName}
-        >
-          <FaCopy className="h-8 w-8 drop-shadow-sm" />
-        </button>
+        {!demoMode && (
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 nes-pointer disabled:cursor-not-allowed text-gray-400 disabled:text-gray-400"
+            onClick={handleCopyOwnerAddrOrName}
+          >
+            <FaCopy className="h-8 w-8 drop-shadow-sm" />
+          </button>
+        )}
       </div>
     </div>
   );

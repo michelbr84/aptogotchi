@@ -20,11 +20,14 @@ const aptosClient = getAptosClient();
 
 export function Connected() {
   // These are attributes tied to our Aptogotchi
-  const { pet, setPet } = usePet();
+  const { pet, setPet, demoMode } = usePet();
   // The currently connected account and network let us know where to look for on-chain data
   const { account, network } = useWallet();
 
   const fetchPet = useCallback(async () => {
+    // Skip fetching in demo mode - we already have a demo pet
+    if (demoMode) return;
+
     // We need to know which account owns the Aptogotchi we're interested in.
     if (!account?.address) return;
 
@@ -70,22 +73,25 @@ export function Connected() {
         console.error(error);
       }
     }
-  }, [account?.address]);
+  }, [account?.address, demoMode]);
 
   useEffect(() => {
+    // Skip effect in demo mode
+    if (demoMode) return;
     if (!account?.address || !network) return;
 
     fetchPet();
-  }, [account?.address, fetchPet, network]);
+  }, [account?.address, fetchPet, network, demoMode]);
 
   const TESTNET_ID = "2";
 
   // Currently Aptogotchi only works on Testnet, so we display a modal for them to select Testnet.
   // If this user has an Aptogotchi already, we display it using the information from the above logic.
   // Otherwise we give users the option to mint a new Aptogotchi.
+  // In demo mode, we skip the network check modal.
   return (
     <div className="flex flex-col gap-3 p-3">
-      {network?.chainId !== TESTNET_ID && <Modal />}
+      {!demoMode && network?.chainId !== TESTNET_ID && <Modal />}
       {pet ? <Pet /> : <Mint fetchPet={fetchPet} />}
     </div>
   );

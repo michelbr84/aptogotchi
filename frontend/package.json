@@ -13,6 +13,9 @@
   "dependencies": {
     "@aptos-labs/ts-sdk": "^1.5.1",
     "@aptos-labs/wallet-adapter-react": "^2.1.7",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@radix-ui/react-dialog": "^1.0.5",
